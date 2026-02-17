@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garlic | Analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        :root {
+            --bg-body: #0f111a;
+            --bg-sidebar: #151923;
+            --bg-card: #1c212e;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --border: #2d3748;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        aside {
+            width: 260px;
+            background-color: var(--bg-sidebar);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            border-right: 1px solid var(--border);
+        }
+
+        .brand-btn {
+            background-color: #272b36;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            cursor: pointer;
+        }
+
+        nav a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+
+        nav a:hover,
+        nav a.active {
+            background-color: #272b36;
+            color: white;
+        }
+
+        main {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .grid-2-1 {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .stat-val {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .stat-icon {
+            padding: 4px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .green-icon {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-green);
+        }
+
+        .red-icon {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th {
+            text-align: left;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.85rem;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 15px 0;
+            border-bottom: 1px solid #2d3748;
+            font-size: 0.9rem;
+        }
+
+        .pill {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .pill.active {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .pill.critical {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .pill.idle {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .filter-tab {
+            padding: 10px 0;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .filter-tab.active {
+            color: white;
+            border-bottom-color: var(--accent-green);
+        }
+    </style>
+</head>
+
+<body>
+
+    <aside>
+        <div class="brand-btn">
+            <i class="fas fa-th-large"></i> Dashboard
+        </div>
+        <nav>
+            <a href="index.html"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="twin.html"><i class="fas fa-cube"></i> Digital Twin</a>
+            <a href="#" class="active"><i class="fas fa-chart-bar"></i> Analytics</a>
+            <a href="simulator.html"><i class="fas fa-cog"></i> Settings</a>
+        </nav>
+    </aside>
+
+    <main>
+        <h2>Analytics Overview</h2>
+
+        <!-- Top KPIs -->
+        <!-- Top KPIs (Standardized) -->
+        <div class="grid-4">
+            <div class="card">
+                <div class="stat-label">MRI Efficiency Score</div>
+                <div style="display:flex; align-items:flex-end; gap:10px;">
+                    <div class="stat-val text-green" style="color:var(--accent-green); font-size:2.5rem;" id="effValue">
+                        87%</div>
+                    <span style="color:var(--accent-green); font-weight:600; margin-bottom:10px;">GOOD</span>
+                </div>
+            </div>
+            <div class="card" style="background:#2563eb; border:none;">
+                <div class="stat-label" style="color:rgba(255,255,255,0.8);">Current Energy Cost</div>
+                <div class="stat-val" style="color:white" id="wasteMoney">₹1,245.50</div>
+                <div style="font-size:0.85rem; color:rgba(255,255,255,0.7); margin-top:5px;">Forecast: ₹4,500</div>
+            </div>
+            <div class="card">
+                <div class="stat-label">Active Machines</div>
+                <div class="stat-val"><span id="activeCount">12</span> <span
+                        style="font-size:1.5rem; color:var(--text-secondary); font-weight:400">/ 30</span></div>
+                <!-- Mini Bar Graph Mockup -->
+                <div style="display:flex; gap:3px; align-items:flex-end; height:30px; margin-top:10px; opacity:0.5;">
+                    <div style="width:6px; height:40%; background:#3b82f6;"></div>
+                    <div style="width:6px; height:60%; background:#3b82f6;"></div>
+                    <div style="width:6px; height:80%; background:#3b82f6;"></div>
+                    <div style="width:6px; height:50%; background:#3b82f6;"></div>
+                    <div style="width:6px; height:90%; background:#3b82f6;"></div>
+                    <div style="width:6px; height:70%; background:#3b82f6;"></div>
+                </div>
+            </div>
+            <div class="card" style="background:var(--accent-red); border:none;">
+                <div class="stat-label" style="color:rgba(255,255,255,0.9);">Critical Alerts</div>
+                <div class="stat-val" style="color:white" id="alertCount">3</div>
+                <div style="font-size:0.85rem; color:rgba(255,255,255,0.8); margin-top:5px;">Action Required</div>
+            </div>
+        </div>
+
+        <!-- Middle Charts -->
+        <div class="grid-2-1">
+            <div class="card">
+                <div class="stat-label">Energy Consumption Trend (Last 30 Days)</div>
+                <div style="height: 250px; width: 100%;">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <div class="stat-label">Device State Distribution</div>
+                <div style="height: 200px; width: 100%; display: flex; justify-content: center;">
+                    <canvas id="donutChart"></canvas>
+                </div>
+                <div style="text-align: center; margin-top: 10px; font-size: 0.8rem; color: var(--text-secondary);">
+                    <span style="color:#10b981">●</span> Active &nbsp;
+                    <span style="color:#fbbf24">●</span> Idle &nbsp;
+                    <span style="color:#ef4444">●</span> Critical
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Table -->
+        <div class="card">
+            <div class="stat-label">Device Performance Data</div>
+            <div class="filter-bar">
+                <div class="filter-tab active">All Devices</div>
+                <div class="filter-tab">Grouped by Type</div>
+                <div class="filter-tab">Grouped by Location</div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Device Name</th>
+                        <th>Status</th>
+                        <th>Efficiency</th>
+                        <th>Energy Used (kWh)</th>
+                        <th>Last Alert</th>
+                    </tr>
+                </thead>
+                <tbody id="deviceTableBody">
+                    <!-- Populated by JS -->
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <script>
+        const ws = new WebSocket('ws://' + window.location.host);
+        const machines = {};
+
+        ws.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+
+            if (msg.type === 'FULL_STATE') {
+                // Bulk load
+                msg.payload.forEach(p => updateMachineState(p));
+            } else if (msg.type === 'UPDATE') {
+                // Single update
+                updateMachineState(msg.payload);
+            }
+
+            renderTable();
+            updateCharts();
+        };
+
+        function updateMachineState(packet) {
+            const id = packet.deviceId;
+            if (!machines[id]) {
+                machines[id] = {
+                    status: 'UNKNOWN',
+                    rms: 0,
+                    energy: Math.random() * 100, // Mock initial
+                    efficiency: 80 + Math.random() * 20
+                };
+            }
+
+            machines[id].status = packet.status;
+            machines[id].rms = packet.rms || packet.data?.rmsCurrent || 0;
+            if (machines[id].status === 'ACTIVE') machines[id].energy += 0.01;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('deviceTableBody');
+            tbody.innerHTML = Object.keys(machines).sort().map(id => {
+                const m = machines[id];
+                let pillClass = 'active';
+                if (m.status === 'IDLE') pillClass = 'idle';
+                if (m.status === 'ALERT') pillClass = 'critical';
+
+                return `
+                <tr>
+                    <td style="font-weight:600">${id}</td>
+                    <td><span class="pill ${pillClass}">${m.status || 'OFFLINE'}</span></td>
+                    <td>${m.efficiency.toFixed(0)}%</td>
+                    <td>${m.energy.toFixed(1)} kWh</td>
+                    <td style="color:var(--text-secondary)">Today - ${new Date().toLocaleTimeString()}</td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // --- Charts ---
+        const trendCtx = document.getElementById('trendChart').getContext('2d');
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00'],
+                datasets: [
+                    { label: 'Presses', data: [12, 19, 3, 5, 2, 3, 10], borderColor: '#3b82f6', tension: 0.4 },
+                    { label: 'CNC', data: [8, 11, 13, 15, 12, 13, 15], borderColor: '#10b981', tension: 0.4 },
+                    { label: 'Furnaces', data: [5, 6, 7, 8, 9, 10, 11], borderColor: '#f59e0b', tension: 0.4 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } },
+                scales: {
+                    y: { grid: { color: '#2d3748' }, ticks: { color: '#94a3b8' } },
+                    x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                }
+            }
+        });
+
+        const donutCtx = document.getElementById('donutChart').getContext('2d');
+        const donutChart = new Chart(donutCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Active', 'Idle', 'Critical'],
+                datasets: [{
+                    data: [80, 20, 10],
+                    backgroundColor: ['#10b981', '#fbbf24', '#ef4444'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } }, // Custom legend used
+                cutout: '70%'
+            }
+        });
+
+        function updateCharts() {
+            // Update donut based on live counts
+            const all = Object.values(machines);
+            const active = all.filter(m => m.status === 'ACTIVE' || m.status === 'HEARTBEAT' || m.status === 'WORKING').length;
+            const idle = all.filter(m => m.status === 'IDLE').length;
+            const alert = all.filter(m => m.status === 'ALERT' || m.status === 'SPIKE').length;
+
+            if (all.length > 0) {
+                donutChart.data.datasets[0].data = [active, idle, alert];
+                donutChart.update();
+
+                // Update Top Stats
+                document.getElementById('activeCount').innerText = active;
+                document.getElementById('alertCount').innerText = alert;
+
+                // Mock Cost
+                const estCost = all.reduce((acc, m) => acc + (m.status === 'ACTIVE' ? 0.05 : 0), 1245);
+                document.getElementById('wasteMoney').innerText = '₹' + estCost.toFixed(2);
+            }
+        }
+    </script>
+</body>
+
+</html>

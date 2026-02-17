@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Garlic | Digital Twin</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #f0f2f5;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        /* HEADER / HUD */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 20px;
+            box-sizing: border-box;
+            pointer-events: none;
+        }
+
+        .info-panel {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            pointer-events: auto;
+        }
+
+        h1 {
+            margin: 0 0 5px 0;
+            font-size: 1.1rem;
+            color: #1e293b;
+            font-weight: 700;
+        }
+
+        p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-top: 6px;
+            font-size: 0.8rem;
+            color: #475569;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .stats-container {
+            display: flex;
+            gap: 15px;
+            pointer-events: auto;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px 16px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            min-width: 100px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            color: #1e293b;
+            font-weight: 700;
+        }
+
+        .stat-sub {
+            font-size: 0.75rem;
+            color: #10b981;
+            margin-top: 2px;
+        }
+
+        .stat-sub.red {
+            color: #ef4444;
+        }
+
+        #tooltip {
+            position: absolute;
+            display: none;
+            background: rgba(15, 23, 42, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            transform: translate(15px, 15px);
+            z-index: 100;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .back-btn {
+            background: #2563eb;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+            pointer-events: auto;
+            transition: background 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #1d4ed8;
+        }
+    </style>
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Tweening -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+</head>
+
+<body>
+
+    <div id="hud">
+        <div class="info-panel">
+            <h1>Factory Floor A (Isometric)</h1>
+            <p>Real-time topology & flow</p>
+            <div style="margin-top:10px; border-top:1px solid #e2e8f0; padding-top:10px;">
+                <div class="legend-item">
+                    <div class="dot" style="background:#3b82f6"></div> Sensor Node
+                </div>
+                <div class="legend-item">
+                    <div class="dot" style="background:#10b981"></div> Aggregator (LoRa)
+                </div>
+                <div class="legend-item">
+                    <div class="dot" style="background:#8b5cf6"></div> Gateway (Cloud)
+                </div>
+                <div class="legend-item">
+                    <div class="dot" style="background:#ef4444"></div> Alert State
+                </div>
+            </div>
+            <div style="margin-top:15px;">
+                <a href="index.html" class="back-btn">← Dashboard</a>
+            </div>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-label">MRI Score</div>
+                <div class="stat-value" style="color:#10b981">87%</div>
+                <div class="stat-sub">Good</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Energy Cost</div>
+                <div class="stat-value" id="costVal">₹1,245.50</div>
+                <div class="stat-sub">Forecast: ₹4,500</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Machines</div>
+                <div class="stat-value">12 <span style="font-size:1rem; color:#94a3b8; font-weight:400">/ 15</span>
+                </div>
+                <div class="stat-sub">80% Utilization</div>
+            </div>
+            <div class="stat-card" style="background: #fef2f2; border: 1px solid #fee2e2;">
+                <div class="stat-label" style="color:#b91c1c">Critical Alerts</div>
+                <div class="stat-value" style="color:#ef4444" id="alertVal">0</div>
+                <div class="stat-sub red">Action Required</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tooltip"></div>
+
+    <script>
+        // --- CONFIG ---
+        const SCENE_BG = 0xf0f2f5;
+        const FLOOR_COLOR = 0xe2e8f0;
+
+        // --- SETUP ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(SCENE_BG);
+        scene.fog = new THREE.Fog(SCENE_BG, 20, 100);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(40, 40, 40);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2.1;
+
+        // --- LIGHTS ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+        dirLight.position.set(20, 50, 20);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        scene.add(dirLight);
+
+        // --- ENVIRONMENT ---
+        const floorGeo = new THREE.PlaneGeometry(100, 100);
+        const floorMat = new THREE.MeshStandardMaterial({ color: FLOOR_COLOR });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        const grid = new THREE.GridHelper(100, 50, 0xcbd5e1, 0xe2e8f0);
+        scene.add(grid);
+
+        // --- OBJECTS ---
+        const sensors = {};
+        let aggregator, gateway;
+
+        function initScene() {
+            // Gateway (Purple)
+            const gwGeo = new THREE.BoxGeometry(2, 4, 1);
+            const gwMat = new THREE.MeshLambertMaterial({ color: 0x8b5cf6 });
+            gateway = new THREE.Mesh(gwGeo, gwMat);
+            gateway.position.set(20, 2, -20);
+            gateway.castShadow = true;
+            scene.add(gateway);
+
+            // Cloud Line
+            const cloudPoints = [new THREE.Vector3(20, 4, -20), new THREE.Vector3(25, 15, -25)];
+            const cloudLineGeo = new THREE.BufferGeometry().setFromPoints(cloudPoints);
+            const cloudLine = new THREE.Line(cloudLineGeo, new THREE.LineDashedMaterial({ color: 0x8b5cf6, dashSize: 1, gapSize: 1 }));
+            cloudLine.computeLineDistances();
+            scene.add(cloudLine);
+
+            // Aggregator (Green)
+            const pillarGeo = new THREE.CylinderGeometry(0.5, 0.5, 6, 16);
+            const pillarMat = new THREE.MeshLambertMaterial({ color: 0xcbd5e1 });
+            const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+            pillar.position.set(0, 3, 0);
+            pillar.receiveShadow = true;
+            scene.add(pillar);
+
+            const aggGeo = new THREE.BoxGeometry(2, 1, 1);
+            const aggMat = new THREE.MeshLambertMaterial({ color: 0x10b981 });
+            aggregator = new THREE.Mesh(aggGeo, aggMat);
+            aggregator.position.set(0, 6.5, 0);
+            aggregator.castShadow = true;
+            scene.add(aggregator);
+
+            createConnection(aggregator.position, gateway.position, 0x10b981);
+        }
+
+        const machineSlots = [
+            { x: -15, z: -10 }, { x: -10, z: 10 },
+            { x: 10, z: 10 }, { x: 15, z: -5 },
+            { x: -20, z: 0 }, { x: 5, z: 20 },
+            { x: -5, z: -20 }, { x: 25, z: 5 }
+        ];
+
+        function createMachine(id, index) {
+            const pos = machineSlots[index % machineSlots.length];
+            const jitterX = Math.floor(index / machineSlots.length) * 5;
+
+            const group = new THREE.Group();
+            group.position.set(pos.x + jitterX, 0, pos.z);
+
+            // Ghost Machine
+            const mGeo = new THREE.BoxGeometry(4, 3, 3);
+            const mMat = new THREE.MeshBasicMaterial({ color: 0x94a3b8, wireframe: true, transparent: true, opacity: 0.3 });
+            const machine = new THREE.Mesh(mGeo, mMat);
+            machine.position.y = 1.5;
+            group.add(machine);
+
+            // Sensor Node
+            const sGeo = new THREE.BoxGeometry(1, 1, 0.5);
+            const sMat = new THREE.MeshLambertMaterial({ color: 0x3b82f6 });
+            const sensor = new THREE.Mesh(sGeo, sMat);
+            sensor.position.set(0, 3.5, 0);
+            sensor.castShadow = true;
+            sensor.userData = { id: id };
+            group.add(sensor);
+
+            scene.add(group);
+
+            const sensorWorldPos = new THREE.Vector3();
+            sensor.getWorldPosition(sensorWorldPos);
+            const aggPos = new THREE.Vector3(0, 6.5, 0);
+            createConnection(sensorWorldPos, aggPos, 0x3b82f6);
+
+            return { mesh: sensor, group: group, worldPos: sensorWorldPos };
+        }
+
+        function createConnection(start, end, color) {
+            const points = [start, end];
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+            const mat = new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.4 });
+            const line = new THREE.Line(geo, mat);
+            scene.add(line);
+        }
+
+        function spawnPacket(startPos, endPos, color) {
+            const geo = new THREE.SphereGeometry(0.3, 8, 8);
+            const mat = new THREE.MeshBasicMaterial({ color: color });
+            const packet = new THREE.Mesh(geo, mat);
+            packet.position.copy(startPos);
+            scene.add(packet);
+
+            new TWEEN.Tween(packet.position)
+                .to({ x: endPos.x, y: endPos.y, z: endPos.z }, 800)
+                .easing(TWEEN.Easing.Quadratic.Out)
+                .onComplete(() => { scene.remove(packet); })
+                .start();
+        }
+
+        initScene();
+
+        // --- DATA LOGIC ---
+        const ws = new WebSocket('ws://' + window.location.host);
+        let alertCount = 0;
+
+        ws.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+            if (msg.type === 'FULL_STATE') {
+                msg.payload.forEach(updateSensor);
+            } else if (msg.type === 'UPDATE') {
+                updateSensor(msg.payload);
+            }
+
+            // Mock updates for HUD
+            if (Math.random() > 0.9) {
+                document.getElementById('costVal').innerText = '₹' + (1245 + Math.random() * 5).toFixed(2);
+            }
+        };
+
+        let sensorCount = 0;
+
+        function updateSensor(data) {
+            const id = data.deviceId;
+
+            if (!sensors[id]) {
+                const obj = createMachine(id, sensorCount++);
+                sensors[id] = obj;
+            }
+
+            const sensorObj = sensors[id];
+            const mesh = sensorObj.mesh;
+
+            // Color Logic
+            if (data.status === 'ALERT' || data.status === 'SPIKE') {
+                mesh.material.color.setHex(0xef4444);
+                mesh.scale.set(1.5, 1.5, 1.5);
+
+                // Hacky alert counter update
+                alertCount = 3; // Static for demo matching user image or we need global store
+                document.getElementById('alertVal').innerText = alertCount;
+
+            } else if (data.status === 'IDLE') {
+                mesh.material.color.setHex(0xf59e0b);
+                mesh.scale.set(1, 1, 1);
+            } else {
+                mesh.material.color.setHex(0x10b981);
+                mesh.scale.set(1, 1, 1);
+            }
+
+            spawnPacket(sensorObj.worldPos, new THREE.Vector3(0, 6.5, 0), 0x00ffff);
+            setTimeout(() => {
+                spawnPacket(new THREE.Vector3(0, 6.5, 0), new THREE.Vector3(20, 2, -20), 0x10b981);
+            }, 800);
+        }
+
+        function animate(time) {
+            requestAnimationFrame(animate);
+            TWEEN.update(time);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Interaction
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const tooltip = document.getElementById('tooltip');
+
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(scene.children, true);
+            let found = false;
+            for (let i = 0; i < intersects.length; i++) {
+                if (intersects[i].object.userData.id) {
+                    tooltip.style.display = 'block';
+                    tooltip.style.left = event.clientX + 10 + 'px';
+                    tooltip.style.top = event.clientY + 10 + 'px';
+                    tooltip.innerText = intersects[i].object.userData.id;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) tooltip.style.display = 'none';
+        });
+
+    </script>
+</body>
+
+</html>

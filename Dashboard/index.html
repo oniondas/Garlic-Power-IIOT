@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garlic | Premium Dark</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        :root {
+            --bg-body: #0f111a;
+            --bg-sidebar: #151923;
+            --bg-card: #1c212e;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-yellow: #f59e0b;
+            --accent-blue: #3b82f6;
+            --border: #2d3748;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        aside {
+            width: 260px;
+            background-color: var(--bg-sidebar);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            border-right: 1px solid var(--border);
+        }
+
+        .brand-btn {
+            background-color: #272b36;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            cursor: pointer;
+        }
+
+        nav a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+
+        nav a:hover,
+        nav a.active {
+            background-color: #272b36;
+            color: white;
+        }
+
+        .sim-control {
+            margin-top: auto;
+            background: #1e222d;
+            padding: 16px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Top KPI Row */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            border: 1px solid #2d3240;
+        }
+
+        .kpi-title {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .badge-icon {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        /* Middle Row */
+        .middle-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            height: 320px;
+        }
+
+        .rank-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        .rank-item:last-child {
+            border-bottom: none;
+        }
+
+        .rank-name {
+            color: var(--text-primary);
+        }
+
+        .rank-val {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .tag {
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 4px;
+            display: inline-block;
+        }
+
+        .tag.critical {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+        }
+
+        .tag.high {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--accent-yellow);
+        }
+
+        .tag.med {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent-blue);
+        }
+
+        /* Bottom Heatmap */
+        .heatmap-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
+            gap: 8px;
+            margin-top: 16px;
+            flex: 1;
+        }
+
+        .heatmap-cell {
+            aspect-ratio: 1;
+            border-radius: 6px;
+            background: #2d3240;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            border: 1px solid white;
+        }
+
+        .heatmap-cell:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #000;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .cell-red {
+            background: var(--accent-red);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+        }
+
+        .cell-yellow {
+            background: var(--accent-yellow);
+            box-shadow: 0 0 5px rgba(245, 158, 11, 0.2);
+        }
+
+        .cell-green {
+            background: var(--accent-green);
+            box-shadow: 0 0 5px rgba(16, 185, 129, 0.2);
+        }
+
+        .cell-grey {
+            background: #334155;
+        }
+
+        .legend {
+            display: flex;
+            gap: 30px;
+            /* Use gap for spacing instead of space-between */
+            justify-content: flex-start;
+            /* Align like the screenshot */
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            margin-top: auto;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            text-align: left;
+            /* Align text left */
+        }
+
+        .legend>div {
+            display: flex;
+            align-items: center;
+            /* Vertically align dot and text */
+            gap: 8px;
+        }
+
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--accent-blue);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: 12px;
+            width: 500px;
+            max-width: 90%;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <aside>
+        <div class="brand-btn">
+            <i class="fas fa-th-large"></i> Dashboard
+        </div>
+        <nav>
+            <a href="#" class="active"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="twin.html"><i class="fas fa-cube"></i> Digital Twin</a>
+            <a href="analytics.html"><i class="fas fa-chart-bar"></i> Analytics</a>
+            <a href="simulator.html"><i class="fas fa-cog"></i> Settings</a>
+        </nav>
+
+        <div class="sim-control">
+            <span style="font-size: 0.9rem; color: var(--text-secondary)">Simulation Control</span>
+            <label class="switch">
+                <input type="checkbox" checked disabled>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </aside>
+
+    <main>
+        <!-- Top Stats -->
+        <div class="kpi-row">
+            <div class="card">
+                <div class="kpi-title" style="text-transform:uppercase; font-size:0.8rem; letter-spacing:0.5px;">MRI
+                    Efficiency Score</div>
+                <div style="display:flex; align-items:flex-end; gap:10px;">
+                    <div class="kpi-value text-green" style="color:var(--accent-green); font-size:2.5rem;"
+                        id="effValue">87%</div>
+                    <span style="color:var(--accent-green); font-weight:600; margin-bottom:10px;">GOOD</span>
+                </div>
+            </div>
+            <div class="card" style="background:#2563eb; border:none;">
+                <div class="kpi-title" style="color:rgba(255,255,255,0.8); text-transform:uppercase;">Current Energy
+                    Cost</div>
+                <div class="kpi-value" style="color:white" id="wasteMoney">₹1,245.50</div>
+                <div style="font-size:0.85rem; color:rgba(255,255,255,0.7); margin-top:5px;">Forecast: ₹4,500</div>
+            </div>
+            <div class="card">
+                <div class="kpi-title" style="text-transform:uppercase;">Active Machines</div>
+                <div class="kpi-value"><span id="activeCount">12</span> <span
+                        style="font-size:1.5rem; color:var(--text-secondary); font-weight:400">/ 30</span></div>
+                <!-- Mini Bar Graph Mockup -->
+                <div style="display:flex; gap:3px; align-items:flex-end; height:30px; margin-top:10px; opacity:0.5;">
+                    <div style="width:6px; height:40%; background:#3b82f6;"></div>
+                    <div style="width:6px; height:60%; background:#3b82f6;"></div>
+                    <div style="width:6px; height:80%; background:#3b82f6;"></div>
+                    <div style="width:6px; height:50%; background:#3b82f6;"></div>
+                    <div style="width:6px; height:90%; background:#3b82f6;"></div>
+                    <div style="width:6px; height:70%; background:#3b82f6;"></div>
+                </div>
+            </div>
+            <div class="card" style="background:var(--accent-red); border:none;">
+                <div class="kpi-title" style="color:rgba(255,255,255,0.9); text-transform:uppercase;">Critical Alerts
+                </div>
+                <div class="kpi-value" style="color:white" id="alertCount">3</div>
+                <div style="font-size:0.85rem; color:rgba(255,255,255,0.8); margin-top:5px;">Action Required</div>
+            </div>
+        </div>
+
+        <!-- Middle Row: Graph + Ranking -->
+        <div class="middle-row">
+            <div class="card">
+                <div class="kpi-title">Live Efficiency Graph <span class="tag"
+                        style="background:#10b981; color:black; margin-left:auto;">● Live</span></div>
+                <div style="height: 250px; width: 100%;">
+                    <canvas id="efficiencyChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <div class="kpi-title">Device Energy Wastage Rank</div>
+                <div id="wasteRankList" style="margin-top: 10px;">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Machine Heatmap -->
+        <div class="card" style="flex: 1;">
+            <div class="kpi-title">Machine Heatmap (Click for Details)</div>
+            <div class="heatmap-container">
+                <div class="heatmap-grid" id="heatmapGrid">
+                    <!-- Boxes per machine -->
+                </div>
+
+                <div class="legend">
+                    <div>
+                        <div class="badge-icon" style="background:var(--accent-red); margin-bottom:0;"></div>
+                        <div>
+                            <div style="color:var(--accent-red); font-weight:600;">Critical</div>
+                            <span style="font-size:0.75rem; opacity:0.7">Offline / Fault</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="badge-icon" style="background:var(--accent-yellow); margin-bottom:0;"></div>
+                        <div>
+                            <div style="color:var(--accent-yellow); font-weight:600;">Yellow</div>
+                            <span style="font-size:0.75rem; opacity:0.7">Idle / Wasting</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="badge-icon" style="background:var(--accent-green); margin-bottom:0;"></div>
+                        <div>
+                            <div style="color:var(--accent-green); font-weight:600;">Active</div>
+                            <span style="font-size:0.75rem; opacity:0.7">Working / Efficient</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- DEVICE DETAIL MODAL -->
+    <div class="modal-overlay" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <div class="modal-title" id="modalTitle">Device Details</div>
+                    <div style="color:var(--text-secondary)" id="modalId">ID: --</div>
+                </div>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                <div>
+                    <div style="font-size:0.9rem; color:var(--text-secondary)">Status</div>
+                    <div style="font-weight:700; font-size:1.2rem;" id="modalStatus">--</div>
+                </div>
+                <div>
+                    <div style="font-size:0.9rem; color:var(--text-secondary)">Current</div>
+                    <div style="font-weight:700; font-size:1.2rem;" id="modalRms">-- A</div>
+                </div>
+                <div>
+                    <div style="font-size:0.9rem; color:var(--text-secondary)">Vibration</div>
+                    <div style="font-weight:700; font-size:1.2rem;" id="modalVib">-- g</div>
+                </div>
+            </div>
+
+            <div style="height: 150px; width: 100%;">
+                <canvas id="deviceLiveChart"></canvas>
+            </div>
+
+            <div style="margin-top:20px; text-align:right;">
+                <button onclick="window.location.href='analytics.html'"
+                    style="padding:8px 16px; background:var(--accent-blue); color:white; border:none; border-radius:6px; cursor:pointer;">Go
+                    to Analytics</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ws = new WebSocket('ws://' + window.location.host);
+
+        // State
+        const machines = {}; // { id: { rm, vib, status, idleTicks, wasteCost } }
+        let totalActive = 0;
+        let totalAlerts = 0;
+        let globalWaste = 1250;
+        let selectedDeviceId = null;
+
+        // Init Charts
+        const effCtx = document.getElementById('efficiencyChart').getContext('2d');
+        const effChart = new Chart(effCtx, {
+            type: 'line',
+            data: {
+                labels: Array(20).fill(''),
+                datasets: [{
+                    label: 'Efficiency',
+                    data: Array(20).fill(90),
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { display: false }, y: { display: true, grid: { color: '#2d3748' }, min: 60, max: 100 } },
+                animation: false
+            }
+        });
+
+        const detailCtx = document.getElementById('deviceLiveChart').getContext('2d');
+        const detailChart = new Chart(detailCtx, {
+            type: 'line',
+            data: {
+                labels: Array(20).fill(''),
+                datasets: [{
+                    label: 'Current (A)',
+                    data: Array(20).fill(0),
+                    borderColor: '#3b82f6',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { display: false }, y: { display: true, grid: { color: '#2d3748' } } },
+                animation: false
+            }
+        });
+
+        ws.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+
+            if (msg.type === 'FULL_STATE') {
+                // Bulk load
+                msg.payload.forEach(p => updateMachineState(p));
+            } else if (msg.type === 'UPDATE') {
+                // Single update
+                updateMachineState(msg.payload);
+            } else {
+                // Fallback for legacy format
+                // if (msg.deviceId) updateMachineState(msg);
+            }
+
+            updateAggregates();
+            renderHeatmapWithData();
+            renderRankList();
+
+            // Mock Global Efficiency update
+            updateChart(effChart, 92 + (Math.random() * 4 - 2));
+        };
+
+        function updateMachineState(data) {
+            const id = data.deviceId;
+            if (!machines[id]) {
+                // Preload with random values for screenshot/demo purposes
+                // If IDLE/ALERT, give it a high initial waste cost so it shows up in rank
+                const initialWaste = (data.status === 'IDLE' || data.status === 'ALERT')
+                    ? 200 + Math.random() * 600
+                    : Math.random() * 50;
+
+                machines[id] = {
+                    idleTicks: 0,
+                    wasteCost: initialWaste
+                };
+            }
+
+            machines[id].rms = data.rms;
+            machines[id].vib = data.vib;
+            machines[id].status = data.status;
+
+            // Calc Stats
+            if (data.status === 'IDLE') {
+                machines[id].wasteCost += 0.05;
+                globalWaste += 0.001;
+            }
+
+            // Update Modal if open
+            if (selectedDeviceId === id) {
+                updateModalData(machines[id]);
+            }
+        }
+
+        function updateAggregates() {
+            const all = Object.values(machines);
+            // Count Statuses
+            totalActive = all.filter(m => m.status === 'ACTIVE' || m.status === 'HEARTBEAT' || m.status === 'WORKING').length;
+            totalAlerts = all.filter(m => m.status === 'ALERT' || m.status === 'SPIKE').length;
+
+            document.getElementById('activeCount').innerText = totalActive; // Total is now 30
+            document.getElementById('alertCount').innerText = totalAlerts;
+            document.getElementById('wasteMoney').innerText = '₹' + Math.floor(globalWaste).toLocaleString();
+        }
+
+        function renderHeatmapWithData() {
+            const container = document.getElementById('heatmapGrid');
+            const realKeys = Object.keys(machines).sort();
+
+            // Create 50 cells (Fixed grid size for UI look)
+            let html = '';
+            for (let i = 0; i < 50; i++) {
+                let colorClass = 'cell-grey';
+                let tooltip = 'Empty Slot';
+                let onclick = '';
+
+                const realId = realKeys[i]; // Map first N devices to grid
+
+                if (realId) {
+                    const m = machines[realId];
+                    if (m.status === 'ALERT' || m.status === 'SPIKE') colorClass = 'cell-red';
+                    else if (m.status === 'IDLE') colorClass = 'cell-yellow';
+                    else if (m.status === 'ACTIVE' || m.status === 'HEARTBEAT' || m.status === 'WORKING') colorClass = 'cell-green';
+
+                    tooltip = `${realId} (${m.status})`;
+                    onclick = `openModal('${realId}')`;
+                }
+
+                html += `<div class="heatmap-cell ${colorClass}" data-tooltip="${tooltip}" onclick="${onclick}"></div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function renderRankList() {
+            const sorted = Object.entries(machines)
+                .sort((a, b) => b[1].wasteCost - a[1].wasteCost)
+                .slice(0, 5);
+
+            const container = document.getElementById('wasteRankList');
+            container.innerHTML = sorted.map(([id, m], idx) => {
+                let tag = 'low';
+                let tagText = 'Low';
+                if (m.wasteCost > 100) { tag = 'med'; tagText = 'Medium'; }
+                if (m.wasteCost > 500) { tag = 'high'; tagText = 'High'; }
+
+                return `
+                <div class="rank-item" onclick="openModal('${id}')" style="cursor:pointer">
+                    <div>
+                        <div class="rank-name">${idx + 1}. ${id}</div>
+                        <div class="tag ${tag}">${tagText}</div>
+                    </div>
+                    <div style="text-align:right">
+                        <div class="rank-val">${(m.wasteCost * 2).toFixed(0)} kWh</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function updateChart(chartInstance, value) {
+            const data = chartInstance.data.datasets[0].data;
+            data.push(value);
+            data.shift();
+            chartInstance.update();
+        }
+
+        // --- MODAL LOGIC ---
+        function openModal(id) {
+            selectedDeviceId = id;
+            document.getElementById('detailModal').classList.add('open');
+            document.getElementById('modalId').innerText = `ID: ${id}`;
+            updateModalData(machines[id]);
+
+            // Reset Detail Chart
+            detailChart.data.datasets[0].data = Array(20).fill(machines[id].rms);
+            detailChart.update();
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.remove('open');
+            selectedDeviceId = null;
+        }
+
+        function updateModalData(m) {
+            if (!m) return;
+            document.getElementById('modalStatus').innerText = m.status;
+            document.getElementById('modalRms').innerText = m.rms.toFixed(2) + ' A';
+            document.getElementById('modalVib').innerText = m.vib.toFixed(3) + ' g';
+
+            // Live Chart Update
+            updateChart(detailChart, m.rms);
+        }
+
+    </script>
+</body>
+
+</html>

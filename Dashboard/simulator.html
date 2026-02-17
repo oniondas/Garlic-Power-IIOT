@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garlic | Simulator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #222;
+            color: #eee;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: #333;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #4caf50;
+        }
+
+        button {
+            padding: 8px 12px;
+            cursor: pointer;
+            background: #555;
+            border: none;
+            color: white;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background: #666;
+        }
+
+        button.primary {
+            background: #2196f3;
+        }
+
+        button.danger {
+            background: #f44336;
+        }
+
+        input[type="text"] {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background: #444;
+            color: white;
+        }
+
+        .device-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #444;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+        }
+
+        .badge.NORMAL {
+            background: #4caf50;
+        }
+
+        .badge.DRIFT {
+            background: #ff9800;
+        }
+
+        .badge.SPIKE {
+            background: #f44336;
+        }
+
+        .badge.AUTO_CYCLE {
+            background: #9c27b0;
+        }
+
+        /* Purple for Auto */
+
+        .data-viz {
+            font-size: 0.75em;
+            color: #ccc;
+            margin-top: 4px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🛠️ Simulator Dev Mode</h1>
+
+        <div class="card">
+            <h2>Add Virtual Device</h2>
+            <div class="controls">
+                <input type="text" id="newDeviceId" placeholder="Device ID (e.g., CNC_02)">
+                <button class="primary" onclick="addDevice()">+ Create Device</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Active Devices</h2>
+            <div id="deviceList">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3001';
+
+        async function fetchDevices() {
+            try {
+                const res = await fetch(`${API_URL}/devices`);
+                const devices = await res.json();
+                renderDevices(devices);
+            } catch (e) {
+                document.getElementById('deviceList').innerHTML = `<p style="color:red">Simulator Offline (Check Port 3001)</p>`;
+            }
+        }
+
+        async function addDevice() {
+            const id = document.getElementById('newDeviceId').value;
+            if (!id) return alert("Enter ID");
+            await fetch(`${API_URL}/device/add`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            document.getElementById('newDeviceId').value = "";
+            fetchDevices();
+        }
+
+        async function updateMode(id, mode) {
+            await fetch(`${API_URL}/device/update`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, mode })
+            });
+            fetchDevices(); // Refresh UI to show new mode
+        }
+
+        async function removeDevice(id) {
+            if (!confirm(`Delete ${id}?`)) return;
+            await fetch(`${API_URL}/device/remove`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            fetchDevices();
+        }
+
+        function renderDevices(devices) {
+            const container = document.getElementById('deviceList');
+            container.innerHTML = "";
+
+            if (devices.length === 0) {
+                container.innerHTML = "<p>No active devices.</p>";
+                return;
+            }
+
+            devices.forEach(dev => {
+                const row = document.createElement('div');
+                row.className = 'device-row';
+                row.innerHTML = `
+                    <div>
+                        <strong>${dev.id}</strong> 
+                        <span class="badge ${dev.mode}">${dev.mode}</span>
+                        <div class="data-viz">
+                            Feeding: ${(dev.feedingRms || 0).toFixed(2)}A<br>
+                            Captured: ${dev.rms.toFixed(2)}A (Err: ${(dev.rms - (dev.feedingRms || 0)).toFixed(3)})
+                        </div>
+                    </div>
+                    <div class="controls">
+                        <button onclick="updateMode('${dev.id}', 'NORMAL')">Reset</button>
+                        <button onclick="updateMode('${dev.id}', 'AUTO_CYCLE')" style="background:#9c27b0">Auto</button>
+                        <button onclick="updateMode('${dev.id}', 'DRIFT')" style="background:#ff9800">Drift</button>
+                        <button onclick="updateMode('${dev.id}', 'SPIKE')" style="background:#f44336">Spike</button>
+                        <button class="danger" onclick="removeDevice('${dev.id}')">×</button>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // Auto-refresh state every 2 seconds
+        setInterval(fetchDevices, 2000);
+        fetchDevices();
+    </script>
+</body>
+
+</html>
