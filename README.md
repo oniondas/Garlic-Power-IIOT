@@ -1,6 +1,13 @@
 # 🧄 Garlic: The Immersive Industrial IoT Ecosystem
 
-![Dashboard Preview](docs/assets/dashboard_preview.png)
+### Dashboard Preview
+![Main Dashboard](docs/assets/gallery_1.png)
+
+### Real-Time Analytics & Digital Twin
+| Use Case | Screenshot |
+| :--- | :--- |
+| **Machine Heatmap** | ![Analytics](docs/assets/gallery_2.png) |
+| **3D Digital Twin** | ![3D View](docs/assets/gallery_3.png) |
 
 > 🚧 **Work in Progress**: This project is currently under active development. Some features may be experimental.
 
